@@ -1,0 +1,87 @@
+function createPrestigeGui(p:player):
+    set (metadata tag "prestigeGui" of {_p}) to dropper inventory named "&bPrestige"
+    set {_gui} to (metadata tag "prestigeGui" of {_p})
+    set slots (integers between 0 and 8) of {_gui} to gray stained glass pane without tooltip
+    set slot 4 of {_gui} to PresformatSlot({_p}, ({levels::%{_p}%::prestige} * 50 + 50), ({levels::%{_p}%::prestige} * 50000 + 50000), ({levels::%{_p}%::prestige} * 1 + 1), ({levels::%{_p}%::prestige} * 1 + 1))
+    open {_gui} to {_p}
+
+function PresformatSlot(p:player, level:int, price:int, fortune:num, xp:num) :: item:
+    set {_levelamt} to {_level}
+    set {_i} to nether star named "&bPrestige &8[%returnPrestige({_p})% &7» &b%returnPrestige({_p}) + 1%&8]"
+    add "&8Prestige", "", " &b| &fRewards: ", "", " &8■ &a%formatNumber({_fortune})%x &8- &afortune", " &8■ &3%formatNumber({_xp})%x &8- &3xp", " &b| &fPrice:","", " &8■ &b⭐%formatNumber({_level})%", " &8■ <##00ff11>$%formatNumber({_price})%", "&8Click to prestige" to lore of {_i}
+    set int tag "presprice" of custom nbt of {_i} to {_price}
+    set int tag "preslevel" of custom nbt of {_i} to {_level}
+    return {_i}
+
+
+local function upgradePrestige(p:player, i:item):
+    set {_price} to (int tag "presprice" of custom nbt of {_i})
+    set {_level} to (int tag "preslevel" of custom nbt of {_i})
+    play sound "minecraft:ui.button.click" to {_p}
+    if {player::%{_p}%::balance} < {_price}:
+        play sound "minecraft:entity.villager.no" to {_p}
+        send "{@prefix} You do not have enough money!" to {_p}
+        stop
+    if {levels::%{_p}%::level} < {_level}:
+        play sound "minecraft:entity.villager.no" to {_p}
+        send "{@prefix} You do are not high enough level!" to {_p}
+        stop
+    remove {_price} from {player::%{_p}%::balance}
+    play sound "entity.player.levelup" to {_p}
+    add 1 to {prestige::%{_p}%::fortune}
+    add 1 to {prestige::%{_p}%::xp}
+    prestigeUp({_p})
+    createPrestigeGui({_p})
+    remove {_level} from {levels::%{_p}%::level}
+
+options:
+    prefix: &b&lLEVELS &8&l・&f
+    color: &b
+
+function prestigeUp(p:player):
+    add 1 to {levels::%{_p}%::prestige}
+    play sound "entity.player.levelup" to {_p}
+    send title "&bPrestiged" with subtitle "&8(&7%returnPrestige({_p}) - 1%&8) &7» &8(&b%returnPrestige({_p})%&8)" to {_p}
+    broadcast "{@prefix} &7%{_p}% just prestiged! &7(%returnPrestige({_p}) - 1% &7» %returnPrestige({_p})%)"
+
+
+
+function returnPrestige(p:player) :: integer:
+    return {levels::%{_p}%::prestige} ? 1
+
+
+
+
+on inventory click:
+    if current inventory of player != (metadata tag "prestigeGui" of player):
+        stop
+    cancel event
+    if event-inventory != (metadata tag "prestigeGui" of player):
+        stop
+    if custom nbt of event-slot does not have tag "presprice":
+        stop
+    upgradePrestige(player, event-slot)
+
+
+
+command /prestige:
+    aliases: pres
+    trigger:
+        createPrestigeGui(player)
+
+
+
+command /prestigeadmin [<text>] [<offlineplayer>] [<int>]:
+    aliases: pa 
+    permission: op
+    trigger:
+        if arg-1 is "Add":
+            if arg-2 is not set:
+                send "Cant do that" to player
+            else:
+                if arg-3 is set:
+                    set {_amount} to arg-3
+                    add ({_amount} - 1) to {levels::%player%::prestige}
+                    send "{@prefix} Added %arg-3% to prestige of %arg-2%" to player
+                    send "{@prefix} A staff member added %arg-3% prestiges!" to arg-2
+                    prestigeUp(arg-2)
