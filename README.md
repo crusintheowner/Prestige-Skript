@@ -13,4 +13,4 @@ __**Dependencies:**__
 - Skript
 - SkBee
 
--# If you have any questions feel free to contact me on discord **crusinh**. thank you for taking the time and looking at this!
+If you have any questions feel free to contact me on discord **crusinh**. thank you for taking the time and looking at this!
